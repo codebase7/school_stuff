@@ -3,7 +3,7 @@
 		- A small source code editor in lieu of CrimsonEditor. 
 	Author: Patrick Hibbs
 	E-mail address: phibbs0003@kctcs.edu
-	Last changed: 11/27/2015
+	Last changed: 12/1/2015
 	Assignment 03
 */
 
@@ -20,6 +20,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextArea;	
 import javafx.scene.control.Label;			
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -48,6 +49,10 @@ import java.util.Vector;
 import java.lang.ProcessBuilder;			/* Create new processes. */
 import java.lang.ClassLoader;				/* Abstract dynamic loader. */
 import java.net.URLClassLoader;				/* URL Class loader. */
+import javafx.stage.Window;
+import javafx.scene.Parent;
+import javafx.collections.ObservableList;
+import javafx.scene.layout.Region;
 import java.lang.Exception;				/* Exceptions for bad programmers. */
 
 public class EditorGUI extends Application {
@@ -56,6 +61,16 @@ public class EditorGUI extends Application {
 	private final static String TEXT_FILE_EXTENSION_TXT = ".txt";
 	private final static String JAVA_FILE_EXTENSION_TXT = ".java";
 	private final static String MAIN_WINDOW_TITLE_TXT = "EditorGUI";
+	private final static String PLUGIN_FUNCTION_SELECTION_WINDOW_TITLE_TXT = "Plugin Function Selection";
+	private final static String PLUGIN_FUNCTION_SELECTION_WINDOW_INSTRUCTIONS_LBL = "Please select a function from the list below to generate code for:";
+	private final static String OK_TXT = "OK";
+	private final static String CANCEL_TXT = "Cancel";
+	private final static String TOOLBOX_GENERATE_CODE_FOR_LBL = "Generate code for: ";
+	private final static String TOOLBOX_DECLARATION_CHECKBOX_LBL = "Declaration";
+	private final static String TOOLBOX_INITIALIZATION_CHECKBOX_LBL = "Initialization";
+	private final static String TOOLBOX_REQUIREDARGS_CHECKBOX_LBL = "Required Arguements";
+	private final static String TOOLBOX_EXTRAARGS_CHECKBOX_LBL = "Extra Arguements";
+	private final static String TOOLBOX_FUNCTIONCALL_CHECKBOX_LBL = "Function Call";
 	private final static String PREVIOUS_SESSION_FILENAME = "openTabs.txt";
 	private final static String VARIABLE_NAME_WINDOW_TITLE_TXT = "Variable name entry";
 	private final static String VARIABLE_NAME_WINDOW_TXT = "Please input a variable name for the object:";
@@ -110,6 +125,14 @@ public class EditorGUI extends Application {
 	private TabPane guiTabPane;			/* Contains the editor tabs. */
 	private ScrollPane toolboxSP;
 	private GridPane toolboxGP;
+	private Label toolboxGenerateCodeForLBL;
+	private CheckBox toolboxDeclarationCheckbox;
+	private CheckBox toolboxInitializationCheckbox;
+	private CheckBox toolboxRequiredArgsCheckbox;
+	private CheckBox toolboxExtraArgsCheckbox;
+	private CheckBox toolboxFunctionCallCheckbox;
+	private HBox toolboxUserOptionsHBox;
+	private VBox toolboxVBox;
 	private ButtonHandler buttonHandler;
 	private Vector<Class> loadedToolboxPluginClasses;
 	private Vector<EditorGUIToolBoxPlugin> loadedToolboxPlugins;
@@ -266,22 +289,66 @@ public class EditorGUI extends Application {
 			EditorGUIToolBoxPlugin tempPlugin = null;
 			Vector<Button> tempButtonVector = null;
 
+			/* Create the new ButtonHandler. */
+			this.buttonHandler = new ButtonHandler();
+
 			/* Create the grid pane. */
 			this.toolboxGP = new GridPane();
 
 			/* Create the ScrollPane. */
 			this.toolboxSP = new ScrollPane();
 			this.toolboxSP.setContent(this.toolboxGP);
-			this.guiSplitPane.getItems().addAll(this.toolboxSP);
+
+			/* Create the label for the tool box checkboxes. */
+			this.toolboxGenerateCodeForLBL = new Label(TOOLBOX_GENERATE_CODE_FOR_LBL);
+
+			/* Create the label for the toolbox user options. */
+			this.toolboxGenerateCodeForLBL = new Label(TOOLBOX_GENERATE_CODE_FOR_LBL);
+
+			/* Create CheckBoxes for user options. */
+			this.toolboxDeclarationCheckbox = new CheckBox(TOOLBOX_DECLARATION_CHECKBOX_LBL);
+			this.toolboxInitializationCheckbox = new CheckBox(TOOLBOX_INITIALIZATION_CHECKBOX_LBL);
+			this.toolboxRequiredArgsCheckbox = new CheckBox(TOOLBOX_REQUIREDARGS_CHECKBOX_LBL);
+			this.toolboxExtraArgsCheckbox = new CheckBox(TOOLBOX_EXTRAARGS_CHECKBOX_LBL);
+			this.toolboxFunctionCallCheckbox = new CheckBox(TOOLBOX_FUNCTIONCALL_CHECKBOX_LBL);
+			
+			/* Set minwidth on the checkboxes. */
+			this.toolboxDeclarationCheckbox.setMinWidth(Region.USE_PREF_SIZE);
+			this.toolboxInitializationCheckbox.setMinWidth(Region.USE_PREF_SIZE);
+			this.toolboxRequiredArgsCheckbox.setMinWidth(Region.USE_PREF_SIZE);
+			this.toolboxExtraArgsCheckbox.setMinWidth(Region.USE_PREF_SIZE);
+			this.toolboxFunctionCallCheckbox.setMinWidth(Region.USE_PREF_SIZE);
+
+			/* Set action handler for the important checkboxes. */
+			this.toolboxDeclarationCheckbox.setOnAction(this.buttonHandler);
+			this.toolboxInitializationCheckbox.setOnAction(this.buttonHandler);
+			this.toolboxFunctionCallCheckbox.setOnAction(this.buttonHandler);
+
+			/* Create the HBox for the user options. */
+			this.toolboxUserOptionsHBox = new HBox();
+			this.toolboxUserOptionsHBox.getChildren().addAll(	this.toolboxDeclarationCheckbox,
+																this.toolboxInitializationCheckbox,
+																this.toolboxFunctionCallCheckbox,
+																this.toolboxRequiredArgsCheckbox,
+																this.toolboxExtraArgsCheckbox);
+			this.toolboxUserOptionsHBox.setMargin(this.toolboxDeclarationCheckbox, new Insets(10));
+			this.toolboxUserOptionsHBox.setMargin(this.toolboxInitializationCheckbox, new Insets(10));
+			this.toolboxUserOptionsHBox.setMargin(this.toolboxRequiredArgsCheckbox, new Insets(10));
+			this.toolboxUserOptionsHBox.setMargin(this.toolboxExtraArgsCheckbox, new Insets(10));
+			this.toolboxUserOptionsHBox.setMargin(this.toolboxFunctionCallCheckbox, new Insets(10));
+
+			/* Create the VBox. */
+			this.toolboxVBox = new VBox();
+			this.toolboxVBox.getChildren().addAll(	this.toolboxGenerateCodeForLBL,
+													this.toolboxUserOptionsHBox,
+													this.toolboxSP);
+			this.guiSplitPane.getItems().addAll(this.toolboxVBox);
 
 			/* Purge the loaded classes vector. */
 			this.loadedToolboxPluginClasses = new Vector<Class>();
 
 			/* Purge the loaded plugins vector. */
 			this.loadedToolboxPlugins = new Vector<EditorGUIToolBoxPlugin>();
-
-			/* Create the new ButtonHandler. */
-			this.buttonHandler = new ButtonHandler();
 
 			/* Create new Button vector. */ 
 			tempButtonVector = new Vector<Button>();
@@ -409,6 +476,12 @@ public class EditorGUI extends Application {
 											/* Create a button for the toolbox plugin in the gui. */
 											tempButton = new Button(toolName);
 											tempButton.setOnAction(this.buttonHandler);
+
+											/* Toolbox buttons are disabled until the user enables at least one of:
+												toolboxDeclarationCheckbox, toolboxInitializationCheckbox, or
+												toolboxFunctionCallCheckbox.
+											*/
+											tempButton.setDisable(true);
 
 											/* Copy the button into the button vector. */
 											tempButtonVector.add(tempButton);
@@ -877,6 +950,281 @@ public class EditorGUI extends Application {
 		return;
 	}
 
+	private Stage CreatePluginFunctionSelectionStage(String[] pluginFunctionList) {
+		/* Init vars. */
+		Stage ret = null;							/* The result of this function. */
+		Scene retScene = null;						/* The scene for the result. */
+		Button ok_button = null;					/* OK Button for the scene. */
+		Button cancel_button = null;				/* Cancel Button for the scene. */
+		RadioButton tempRadioButton = null;			/* RadioButton used to create the radio buttons for the functions. */
+		ToggleGroup radioButtonToggleGroup = null;	/* ToggleGroup for the created radio buttons. */
+		VBox radioButtonVBox = null;				/* VBox for the created radio buttons. */
+		Label instructionsLBL = null;				/* Instructions label. */
+		ScrollPane radioButtonSP = null;			/* ScrollPane for the created radio buttons. */
+		HBox buttonsHBox = null;					/* HBox for the buttons. */
+		VBox retVBox = null;						/* Root node for the window. */
+
+		/* Check for valid args. */
+		if (pluginFunctionList.length > 0) {
+			/* Begin try block. */
+			try {
+				/* Create the togglegroup. */
+				radioButtonToggleGroup = new ToggleGroup();
+				if (radioButtonToggleGroup != null) {
+					/* Create the radioButtonVBox. */
+					radioButtonVBox = new VBox();
+					if (radioButtonVBox != null) {
+						for (int x = 0; (x < pluginFunctionList.length); x++) {
+							/* Reset tempRadioButton. */
+							tempRadioButton = null;
+
+							/* Check for valid string. */
+							if (pluginFunctionList[x] != null) {
+								/* Create the new button. */
+								tempRadioButton = new RadioButton(pluginFunctionList[x]);
+								if (tempRadioButton != null) {
+									/* Add the radio button to the VBox. */
+									(radioButtonVBox.getChildren()).add(tempRadioButton);
+
+									/* Add the radio button to the togglegroup. */
+									tempRadioButton.setToggleGroup(radioButtonToggleGroup);
+								}
+							}
+						}
+					}
+
+					/* Check and see if we created anything. */
+					if (((radioButtonVBox.getChildren()).size()) > 0) {
+						/* Create the ScrollPane for the radio buttons. */
+						radioButtonSP = new ScrollPane();
+						if (radioButtonSP != null) {
+							/* Set the radioButtonVBox into the radioButtonSP. */
+							radioButtonSP.setContent(radioButtonVBox);
+
+							/* Create the instructions label. */
+							instructionsLBL = new Label(PLUGIN_FUNCTION_SELECTION_WINDOW_INSTRUCTIONS_LBL);
+							if (instructionsLBL != null) {
+								/* Now create the ok and cancel buttons. */
+								ok_button = new Button(OK_TXT);
+								if (ok_button != null) {
+									/* Create the handler for the button. */
+									ok_button.setOnAction(new EventHandler<ActionEvent>() {
+										@Override
+										public void handle(ActionEvent event) {
+											/* Init vars. */
+											boolean done = false;
+											Object sourceObject = null;
+											Button sourceButton = null;
+											Node tempNode = null;
+											RadioButton tempRadioButton = null;
+											Scene sourceScene = null;
+											Parent sourceParent = null;
+											Window sourceWindow = null;
+											ObservableList<Node> sourceNodeList = null;
+											ObservableList<Node> sourceVBoxNodeList = null; 
+											ObservableList<Node> radioButtonVBoxNodeList = null;
+											VBox retVBox = null;
+											ScrollPane sourceSP = null;
+											VBox radioButtonVBox = null;
+											String functionName = null;
+
+											/* Get the event source. */
+											sourceObject = event.getSource();
+											if ((sourceObject != null) && (sourceObject instanceof Button)) {
+												/* Get the button. */
+												sourceButton = (Button)sourceObject;
+
+												/* Get the button's scene. */
+												sourceScene = sourceButton.getScene();
+												if (sourceScene != null) {
+													/* Get the scene's root node. */
+													sourceParent = sourceScene.getRoot();
+													if (sourceParent != null) {
+														/* Get the node list. */
+														sourceNodeList = sourceParent.getChildrenUnmodifiable();
+														if ((sourceNodeList != null) && (sourceNodeList.size() == 1) &&
+															((sourceNodeList.get(0)) != null) &&
+															((sourceNodeList.get(0)) instanceof VBox)) {
+																/* Get back the root node VBox. */
+																retVBox = (VBox)sourceNodeList.get(0);
+
+																/* Get back the VBox's children. */
+																sourceVBoxNodeList = retVBox.getChildren();
+																if (sourceVBoxNodeList != null) {
+																	for (int x = 0; ((!done) && (x < sourceVBoxNodeList.size())); x++) {
+																		/* Find the ScrollPane. */
+																		if (((sourceVBoxNodeList.get(x)) != null) &&
+																			((sourceVBoxNodeList.get(x)) instanceof ScrollPane)) {
+																				/* Get the ScrollPane. */
+																				sourceSP = (ScrollPane)sourceVBoxNodeList.get(x);
+																				if (sourceSP != null) {
+																					/* Get the radio buttons list. */
+																					tempNode = sourceSP.getContent();
+																					if ((tempNode != null) && (tempNode instanceof VBox)) {
+																						/* Get the VBox, reset tempNode, get the node list from the VBox. */
+																						radioButtonVBox = (VBox)tempNode;
+																						tempNode = null;
+																						radioButtonVBoxNodeList = radioButtonVBox.getChildren();
+																						if (radioButtonVBoxNodeList != null) {
+																							/* Begin loop to find the selected radio button. */
+																							for (int y = 0; ((!done) && (y < radioButtonVBoxNodeList.size())); y++) {
+																								/* Check for null and radio button. */
+																								tempNode = radioButtonVBoxNodeList.get(y);
+																								if ((tempNode != null) && (tempNode instanceof RadioButton)) {
+																									tempRadioButton = (RadioButton)tempNode;
+
+																									/* Check and see if the radio button is selected. */
+																									if (tempRadioButton.isSelected()) {
+																										/* Found the selected radio button! (At last....) 
+																											Get the thing's name.
+																										*/
+																										functionName = tempRadioButton.getText();
+																										if (functionName != null) {
+																											System.out.println("Selected Function Name: " + functionName);
+																											/* We need to check and see if the user is setting args for the function. */
+																											/*if () {
+																												/* Check and see if the user wants to set the required arguments. */
+																											//	if (toolboxRequiredArgsCheckbox.isSelected()) {
+																													/* Check and see if the plugin has required args for the function call. */
+																													/* functionHasRequiredArguements() */
+																												//	if (tempPlugin.hasRequiredArguements()) {
+																														/* Get the stage for the required arguments. */
+																														/* getFunctionRequiredArguementsStage() */
+																												//		pluginStage = tempPlugin.getRequiredArguementsStage();
+																												//		if (pluginStage != null) {
+																															/* Show the stage. */
+																												//			pluginStage.showAndWait();
+																													//	}
+																												//	}
+																												//}
+
+																												/* Check and see if the user wants to set the extra arguments. */
+																											//	if (toolboxExtraArgsCheckbox.isSelected()) {
+																													/* Check and see if the plugin has extra args for the function call. */
+																													/* functionHasExtraOptions() */
+																												//	if (tempPlugin.hasExtraOptions()) {
+																														/* Get the stage for the extra arguments. */
+																														/* getFunctionExtraOptionsStage() */
+																													//	pluginStage = tempPlugin.getExtraOptionsStage();
+																													//	if (pluginStage != null) {
+																															/* Show the stage. */
+																														//	pluginStage.showAndWait();
+																											//			}
+																											//		}
+																											//	}
+																												
+																												/* Generate the function call. */
+																												//currentEditor.addLine(((tempPlugin.generateFunctionCall()) + "\n"));
+																									//		}
+																										}
+
+																										/* Done. */
+																										done = true;
+																									}
+																								}
+																							}
+																						}
+																					}
+																				}
+																		}
+																	}
+																}
+														}
+													}
+
+													/* Get the window. */
+													sourceWindow = sourceScene.getWindow();
+													if (sourceWindow != null) {
+														/* Hide (close) the window. */
+														sourceWindow.hide();
+													}
+												}
+											}
+
+											/* Exit function. */
+											return;
+										}
+									});
+									
+									/* Cancel button. */
+									cancel_button = new Button(CANCEL_TXT);
+									if (cancel_button != null) {
+										/* Create the handler for the button. */
+										cancel_button.setOnAction(new EventHandler<ActionEvent>() {
+											@Override
+											public void handle(ActionEvent event) {
+												/* Init vars. */
+												Object sourceObject = null;
+												Button sourceButton = null;
+												Scene sourceScene = null;
+												Window sourceWindow = null;
+
+												/* Get the event source. */
+												sourceObject = event.getSource();
+												if ((sourceObject != null) && (sourceObject instanceof Button)) {
+													/* Get the button. */
+													sourceButton = (Button)sourceObject;
+
+													/* Get the button's scene. */
+													sourceScene = sourceButton.getScene();
+													if (sourceScene != null) {
+														/* Get the window. */
+														sourceWindow = sourceScene.getWindow();
+														if (sourceWindow != null) {
+															/* Hide (close) the window. */
+															sourceWindow.hide();
+														}
+													}
+												}
+
+												/* Exit function. */
+												return;
+											}
+										});
+
+										/* Create the HBox. */
+										buttonsHBox = new HBox();
+										if (buttonsHBox != null) {
+											buttonsHBox.getChildren().addAll(	ok_button,
+																				cancel_button);
+
+											/* Create the retVBox. */
+											retVBox = new VBox();
+											if (retVBox != null) {
+												retVBox.getChildren().addAll(	instructionsLBL,
+																				radioButtonSP,
+																				buttonsHBox);
+
+												/* Create the scene. */
+												retScene = new Scene(retVBox);
+												if (retScene != null) {
+													/* Create the stage. */
+													ret = new Stage();
+													if (ret != null) {
+														ret.setTitle(PLUGIN_FUNCTION_SELECTION_WINDOW_TITLE_TXT);
+														ret.setScene(retScene);
+														ret.initModality(Modality.WINDOW_MODAL);
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			catch (Exception e) {
+				System.out.println("\nEXCEPTION: CreatePluginFunctionSelectionStage(): Exception thrown: " +
+				e.getMessage());
+			}
+		}
+
+		/* Exit function. */
+		return ret;
+	}
+
 	private class MenuHandler implements EventHandler<ActionEvent> {
 		@Override
 		public void handle(ActionEvent event) {
@@ -1121,6 +1469,10 @@ public class EditorGUI extends Application {
 			String varName = null;			/* The user's variable name for the object. */
 			TextInputWindow tiWin = null;	/* Window for geting data from the user. */
 			EditorPane currentEditor = null;	/* The currently selected editor pane in the GUI. */
+			Stage pluginStage = null;			/* Used to open windows for plugins. */
+			String[] pluginFunctionList = null;	/* Used to get the list of supported functions from the plugin. */
+			ObservableList<Node> toolboxButtons = null; /* A Node list of the toolbox's buttons. */
+			Node tempNode = null;				/* Used to access Node objects. */
 
 			/* Check for valid state. */
 			if ((toolboxGP != null) && (guiTabPane != null) &&
@@ -1150,47 +1502,152 @@ public class EditorGUI extends Application {
 										/* Get the currently selected tab's editor pane. */
 										currentEditor = GetCurrentlySelectedEditorPane();
 										if (currentEditor != null) {
+											/* Make sure we have something to do. */
+											if ((toolboxDeclarationCheckbox.isSelected()) ||
+												(toolboxInitializationCheckbox.isSelected()) ||
+												(toolboxFunctionCallCheckbox.isSelected())) {
 
-											/* Begin try block for the TextInputWindow. */
-											try {
-												/* Ask the user to create a variable name for the object. */
-												tiWin = new TextInputWindow(VARIABLE_NAME_WINDOW_TITLE_TXT,
-																			VARIABLE_NAME_WINDOW_TXT);
-												if (tiWin != null) {
-													/* Display the message to the user and allow them to name the variable. */
-													varName = tiWin.ShowMessage();
+												/* Begin try block for the TextInputWindow. */
+												try {
+													/* Ask the user to create a variable name for the object. */
+													tiWin = new TextInputWindow(VARIABLE_NAME_WINDOW_TITLE_TXT,
+																				VARIABLE_NAME_WINDOW_TXT);
+													if (tiWin != null) {
+														/* Display the message to the user and allow them to name the variable. */
+														varName = tiWin.ShowMessage();
 
-													/*! TODO: 
+														/*! TODO: 
 
-														- Actually add support beyond what was required for Assignment 03:
-															- Extra Options
-															- Required Arguements
-															- Function calls
+															- Actually add support beyond what was required for Assignment 03:
+																- Extra Options
+																- Required Arguements
+																- Function calls
 
-														Thinking about adding tabs for the toolbox to allow setting
-														which dialogs to show, or maybe use a RadioButton with
-														keyboard shortcuts for to make the selection.
+															Thinking about adding tabs for the toolbox to allow setting
+															which dialogs to show, or maybe use a RadioButton with
+															keyboard shortcuts for to make the selection.
 
-														(Or maybe just use CheckBoxes and show the
-														selected dialogs in succession.....)
-													*/
+															(Or maybe just use CheckBoxes and show the
+															selected dialogs in succession.....)
+														*/
 
-													/* Call generateDeclarationCode(), add the result to the
-														current tab's editor pane. */
-													currentEditor.addLine(((tempPlugin.generateDeclarationCode(varName)) + "\n"));
+														/* Check and see if the toolboxDeclarationCheckbox is checked. */
+														if (toolboxDeclarationCheckbox.isSelected()) {
+															/* Call generateDeclarationCode(), add the result to the
+																current tab's editor pane. */
+															currentEditor.addLine(((tempPlugin.generateDeclarationCode(varName)) + "\n"));
+														}
 
-													/* Call generateInitializationCode(), add the result to the
-														current tab's editor pane. */
-													currentEditor.addLine(((tempPlugin.generateInitializationCode(varName)) + "\n"));
+														/* Check and see if the toolboxInitializationCheckbox is checked. */
+														if (toolboxInitializationCheckbox.isSelected()) {
+															/* Check and see if the user wants to set the required arguments. */
+															if (toolboxRequiredArgsCheckbox.isSelected()) {
+																/* Check and see if the plugin has required args for the initilization code. */
+																if (tempPlugin.hasRequiredArguements()) {
+																	/* Get the stage for the required arguments. */
+																	pluginStage = tempPlugin.getRequiredArguementsStage();
+																	if (pluginStage != null) {
+																		/* Show the stage. */
+																		pluginStage.showAndWait();
+																	}
+																}
+															}
 
-													/* Done. */
-													done = true;
+															/* Check and see if the user wants to set the extra arguments. */
+															if (toolboxExtraArgsCheckbox.isSelected()) {
+																/* Check and see if the plugin has extra args for the initilization code. */
+																if (tempPlugin.hasExtraOptions()) {
+																	/* Get the stage for the extra arguments. */
+																	pluginStage = tempPlugin.getExtraOptionsStage();
+																	if (pluginStage != null) {
+																		/* Show the stage. */
+																		pluginStage.showAndWait();
+																	}
+																}
+															}
+
+															/* Call generateInitializationCode(), add the result to the
+																current tab's editor pane. */
+															currentEditor.addLine(((tempPlugin.generateInitializationCode(varName)) + "\n"));
+														}
+
+														/* Check and see if the toolboxFunctionCallCheckbox is checked. */
+														if (toolboxFunctionCallCheckbox.isSelected()) {
+															/* Check and see if there are any functions that the plugin can generate code for. */
+															if (tempPlugin.numberOfFunctionsToCall() > 0) {
+																/* Get the function list. */
+																pluginFunctionList = tempPlugin.getFunctionList();
+																if (pluginFunctionList != null) {
+																	/* Create and show the function call selection stage for the user. */
+																	pluginStage = CreatePluginFunctionSelectionStage(pluginFunctionList);
+																	if (pluginStage != null) {
+																		/* Set the owner of the function call selection stage,
+																			show it, and wait for user to finish.
+																			(Code generation is done in the function call selection stage,
+																			 NOT here.)
+																		*/
+																		pluginStage.initOwner(guiStage);
+																		pluginStage.showAndWait();
+																	}
+																}
+															}
+														}
+
+														/* Done. */
+														done = true;
+													}
+												}
+												catch (Exception e) {
+												System.out.println("EXCEPTION: Exception thrown while attempting " +
+													"to ask the user for a variable name.\n The thrown exception was: " +
+													e.getMessage());
 												}
 											}
-											catch (Exception e) {
-											System.out.println("EXCEPTION: Exception thrown while attempting " +
-												"to ask the user for a variable name.\n The thrown exception was: " +
-												e.getMessage());
+											else {
+												/* Nothing to do. */
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					else {
+						if (sourceObject instanceof CheckBox) {
+							if ((sourceObject == toolboxDeclarationCheckbox) ||
+								(sourceObject == toolboxInitializationCheckbox) ||
+								(sourceObject == toolboxFunctionCallCheckbox)) {
+								/* Determine if the all of the above checkboxes are inactive. */
+								if ((!(toolboxDeclarationCheckbox.isSelected())) &&
+									(!(toolboxInitializationCheckbox.isSelected())) &&
+									(!(toolboxFunctionCallCheckbox.isSelected()))) {
+									/* Get the toolbox buttons. */
+									toolboxButtons = toolboxGP.getChildren();
+									if (toolboxButtons != null) {
+										/* Disable the toolbox. */
+										for (int x = 0; (x < toolboxButtons.size()); x++) {
+											/* Get the node. */
+											tempNode = toolboxButtons.get(x);
+											/* Check for null and instanceof Button. */
+											if ((tempNode != null) && (tempNode instanceof Button)) {
+												/* Disable the button. */
+												((Button)(tempNode)).setDisable(true);
+											}
+										}
+									}
+								}
+								else {
+									/* Get the toolbox buttons. */
+									toolboxButtons = toolboxGP.getChildren();
+									if (toolboxButtons != null) {
+										/* Enable the toolbox. */
+										for (int x = 0; (x < toolboxButtons.size()); x++) {
+											/* Get the node. */
+											tempNode = toolboxButtons.get(x);
+											/* Check for null and instanceof Button. */
+											if ((tempNode != null) && (tempNode instanceof Button)) {
+												/* Enable the button. */
+												((Button)(tempNode)).setDisable(false);
 											}
 										}
 									}
